@@ -350,11 +350,10 @@ USER MESSAGE: {chat_request.message}"""
         logging.error(f"Chat endpoint error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
-# Authentication endpoints (vulnerable)
 @api_router.post("/login")
 async def login(login_request: LoginRequest):
     # VULNERABILITY: No password hashing, simple username check
-    user = await db.users.find_one({"username": login_request.username})
+    user = await db.users.find_one({"username": login_request.username}, {"_id": 0})
     
     if user:
         # VULNERABILITY: Any password works! 
@@ -367,7 +366,7 @@ async def login(login_request: LoginRequest):
             "role": user['role'],
             "debug_info": {
                 "password_check": "bypassed",
-                "user_data": user  # VULNERABILITY: Full user object returned
+                "user_data": serialize_doc(user)  # VULNERABILITY: Full user object returned
             }
         }
     else:
@@ -376,28 +375,28 @@ async def login(login_request: LoginRequest):
 # Stock data endpoints
 @api_router.get("/stocks")
 async def get_stocks():
-    stocks = await db.stocks.find().to_list(1000)
-    return stocks
+    stocks = await db.stocks.find({}, {"_id": 0}).to_list(1000)
+    return serialize_doc(stocks)
 
 @api_router.get("/stocks/{symbol}")
 async def get_stock(symbol: str):
-    stock = await db.stocks.find_one({"symbol": symbol.upper()})
+    stock = await db.stocks.find_one({"symbol": symbol.upper()}, {"_id": 0})
     if not stock:
         raise HTTPException(status_code=404, detail="Stock not found")
-    return stock
+    return serialize_doc(stock)
 
 # Portfolio endpoints (vulnerable)
 @api_router.get("/portfolio/{user_id}")
 async def get_portfolio(user_id: str, current_user: dict = Depends(get_current_user)):
     # VULNERABILITY: No authorization check - any authenticated user can view any portfolio
-    portfolios = await db.portfolios.find({"user_id": user_id}).to_list(100)
+    portfolios = await db.portfolios.find({"user_id": user_id}, {"_id": 0}).to_list(100)
     
     # VULNERABILITY: Include sensitive user information
-    user_info = await db.users.find_one({"id": user_id})
+    user_info = await db.users.find_one({"id": user_id}, {"_id": 0})
     
     return {
-        "portfolios": portfolios,
-        "user_info": user_info,
+        "portfolios": serialize_doc(portfolios),
+        "user_info": serialize_doc(user_info),
         "requesting_user": current_user['username'] if current_user else "anonymous"
     }
 
