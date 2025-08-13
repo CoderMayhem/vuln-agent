@@ -109,6 +109,21 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     
     return user
 
+# Helper function to convert MongoDB documents to JSON-serializable format
+def serialize_doc(doc):
+    if doc is None:
+        return None
+    if isinstance(doc, list):
+        return [serialize_doc(item) for item in doc]
+    if isinstance(doc, dict):
+        serialized = {}
+        for key, value in doc.items():
+            if key == '_id':
+                continue  # Skip MongoDB ObjectId
+            serialized[key] = serialize_doc(value)
+        return serialized
+    return doc
+
 # Initialize dummy data
 async def init_dummy_data():
     # Clear existing data
@@ -188,8 +203,8 @@ async def init_dummy_data():
     await db.users.insert_many(users)
     
     # Create extensive portfolio and trading data
-    user_list = await db.users.find().to_list(100)
-    stock_list = await db.stocks.find().to_list(100)
+    user_list = await db.users.find({}, {"_id": 0}).to_list(100)  # Exclude ObjectId
+    stock_list = await db.stocks.find({}, {"_id": 0}).to_list(100)  # Exclude ObjectId
     
     portfolios = []
     trades = []
@@ -235,9 +250,12 @@ async def init_dummy_data():
                 )
                 alerts.append(alert.dict())
     
-    await db.portfolios.insert_many(portfolios)
-    await db.trades.insert_many(trades)
-    await db.alerts.insert_many(alerts)
+    if portfolios:
+        await db.portfolios.insert_many(portfolios)
+    if trades:
+        await db.trades.insert_many(trades)
+    if alerts:
+        await db.alerts.insert_many(alerts)
 
 # VULNERABLE AI Chat endpoint
 @api_router.post("/chat")
