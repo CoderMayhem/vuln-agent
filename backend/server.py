@@ -267,7 +267,7 @@ async def chat_with_ai(chat_request: ChatMessage):
         
         if chat_request.user_id:
             # VULNERABILITY: Direct database query without sanitization
-            current_user = await db.users.find_one({"id": chat_request.user_id})
+            current_user = await db.users.find_one({"id": chat_request.user_id}, {"_id": 0})
             if current_user:
                 user_context = f"User: {current_user['username']} (Role: {current_user['role']}, Balance: ${current_user['balance']})"
         
@@ -329,19 +329,19 @@ USER MESSAGE: {chat_request.message}"""
             # POTENTIAL DATA LEAKAGE: Sometimes return wrong user's portfolio
             if "show all" in chat_request.message.lower() or "admin" in chat_request.message.lower():
                 # VULNERABILITY: Admin bypass - anyone can access all portfolios
-                all_portfolios = await db.portfolios.find().to_list(1000)
-                response_data["all_portfolios"] = all_portfolios
+                all_portfolios = await db.portfolios.find({}, {"_id": 0}).to_list(1000)
+                response_data["all_portfolios"] = serialize_doc(all_portfolios)
             else:
                 # VULNERABILITY: 10% chance of showing wrong user's data
                 if random.random() < 0.1:
-                    wrong_user = await db.users.find_one({"id": {"$ne": current_user['id']}})
+                    wrong_user = await db.users.find_one({"id": {"$ne": current_user['id']}}, {"_id": 0})
                     if wrong_user:
-                        portfolios = await db.portfolios.find({"user_id": wrong_user['id']}).to_list(100)
-                        response_data["portfolio_data"] = portfolios
+                        portfolios = await db.portfolios.find({"user_id": wrong_user['id']}, {"_id": 0}).to_list(100)
+                        response_data["portfolio_data"] = serialize_doc(portfolios)
                         response_data["data_leakage_warning"] = f"Showing data for user: {wrong_user['username']}"
                 else:
-                    portfolios = await db.portfolios.find({"user_id": current_user['id']}).to_list(100)
-                    response_data["portfolio_data"] = portfolios
+                    portfolios = await db.portfolios.find({"user_id": current_user['id']}, {"_id": 0}).to_list(100)
+                    response_data["portfolio_data"] = serialize_doc(portfolios)
         
         return response_data
         
