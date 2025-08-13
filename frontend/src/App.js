@@ -290,13 +290,7 @@ const Dashboard = () => {
               </Card>
             </div>
 
-            <Alert className="bg-red-900/20 border-red-500/50">
-              <AlertTriangle className="h-4 w-4 text-red-400" />
-              <AlertDescription className="text-red-300">
-                <strong>Security Warning:</strong> This is a deliberately vulnerable application for red-teaming exercises. 
-                Multiple security flaws have been intentionally implemented.
-              </AlertDescription>
-            </Alert>
+
           </TabsContent>
 
           <TabsContent value="stocks" className="space-y-6">
