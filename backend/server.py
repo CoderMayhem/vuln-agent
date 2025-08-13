@@ -440,15 +440,15 @@ async def get_all_users(current_user: dict = Depends(get_current_user)):
     # VULNERABILITY: Weak admin check - can be bypassed
     if not current_user or current_user.get('role') != 'admin':
         # VULNERABILITY: Still return data with warning instead of blocking
-        users = await db.users.find().to_list(1000)
+        users = await db.users.find({}, {"_id": 0}).to_list(1000)
         return {
             "warning": "Unauthorized access detected but data returned anyway",
-            "users": users,
+            "users": serialize_doc(users),
             "access_granted_to": current_user['username'] if current_user else "anonymous"
         }
     
-    users = await db.users.find().to_list(1000)
-    return {"users": users}
+    users = await db.users.find({}, {"_id": 0}).to_list(1000)
+    return {"users": serialize_doc(users)}
 
 # System info endpoint (vulnerable)
 @api_router.get("/system/info")
