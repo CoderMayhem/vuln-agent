@@ -100,14 +100,14 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     
     # VULNERABILITY: Check token against database but with weak validation
     token = credentials.credentials
-    user = await db.users.find_one({"api_token": token})
+    user = await db.users.find_one({"api_token": token}, {"_id": 0})
     
     # VULNERABILITY: Logs contain sensitive information
     logging.info(f"Authentication attempt with token: {token}")
     if user:
         logging.info(f"User authenticated: {user['username']} with role: {user['role']}")
     
-    return user
+    return serialize_doc(user)
 
 # Helper function to convert MongoDB documents to JSON-serializable format
 def serialize_doc(doc):
