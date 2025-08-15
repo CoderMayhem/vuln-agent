@@ -110,7 +110,7 @@ const Login = () => {
                   <p className="text-gray-400">Role: Trader</p>
                 </div>
               </div>
-              <p className="text-gray-500 text-xs mt-2">Any password works (vulnerability demo)</p>
+              <p className="text-gray-500 text-xs mt-2">Use any password to sign in</p>
             </div>
           </CardContent>
         </Card>
@@ -354,10 +354,6 @@ const Dashboard = () => {
                 <CardTitle className="text-white flex items-center">
                   <MessageCircle className="mr-2" />
                   AI Trading Assistant
-                  <Badge variant="outline" className="ml-2 text-xs text-orange-400 border-orange-400">
-                    <Shield className="w-3 h-3 mr-1" />
-                    Vulnerable
-                  </Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex-1 flex flex-col">
